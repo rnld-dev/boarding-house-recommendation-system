@@ -1,0 +1,4 @@
+"0","# Filter dataframe untuk menghapus outlier pada data Jarak ke Kampus UPN"
+"0","df <- df[!(df$UPN < lower_bound | df$UPN > upper_bound), ]"
+"0",""
+"0","tail(df)"

@@ -1,0 +1,4 @@
+"0","# Filter dataframe untuk menghapus outlier pada Harga Sewa"
+"0","df <- df[!(df$Harga < lower_bound | df$Harga > upper_bound), ]"
+"0",""
+"0","tail(df)"

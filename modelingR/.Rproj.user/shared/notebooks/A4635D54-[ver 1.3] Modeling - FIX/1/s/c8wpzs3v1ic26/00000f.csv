@@ -1,0 +1,3 @@
+"0","# Menentukan keterangan kategori cluster"
+"0","df$cluster <- factor(df$cluster, levels = c(1, 2), labels = c(""Klaster 1"", ""Klaster 2""))"
+"0",""

@@ -1,0 +1,6 @@
+"0","# Visualisasi Lokasi terhadap cluster"
+"0","ggplot(df, aes(x = Lokasi, fill = cluster)) +"
+"0","  geom_bar(position = ""dodge"") +"
+"0","  labs(title = ""Distribusi Klaster Indekos Berdasarkan Lokasi"", x = ""Lokasi"", y = ""Count"", fill = ""Cluster"") +"
+"0","  theme_minimal() +"
+"0","  theme(legend.position = ""bottom"")"

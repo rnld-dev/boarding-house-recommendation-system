@@ -1,0 +1,7 @@
+"0","library(GGally)"
+"2","Registered S3 method overwritten by 'GGally':
+  method from   
+  +.gg   ggplot2
+"
+"0","# korelasi sebelum PCA"
+"0","ggcorr(df[, c(""Harga"", ""Luas.Kamar"", ""UPN"")], label = T, hjust =1)"

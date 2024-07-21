@@ -1,0 +1,4 @@
+"0","selected_col <- c(""Harga.Scale"", ""Luas.Kamar.Scale"", ""UPN.Scale"", "
+"0","                ""Jenis"", ""Listrik"", ""K.Mandi.Dalam"", ""AC"")"
+"0",""
+"0","df[, selected_col]"

@@ -1,0 +1,5 @@
+"0","# Daftar lokasi Surabaya Timur"
+"0","sby_timur <- c('Gubeng', 'Gunung Anyar', 'Sukolilo', 'Tambaksari', 'Mulyorejo', 'Rungkut', 'Tenggilis Mejoyo')"
+"0",""
+"0","# Filter lokasi sby_timur"
+"0","df <- df[df$Lokasi %in% sby_timur, ]"

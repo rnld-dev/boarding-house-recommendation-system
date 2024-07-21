@@ -1,0 +1,5 @@
+"0","production_df <- c(""Link"", ""Nama"", ""Maps"", ""Latitude"", ""Longitude"","
+"0","                   ""Jenis"", ""Lokasi"", ""Harga"", ""Luas.Kamar"", ""UPN"", "
+"0","                   ""Listrik"", ""K.Mandi.Dalam"", ""AC"", ""WiFi"", ""Kasur"", ""Akses.24.Jam"", ""cluster"")"
+"0",""
+"0","production <- df[, production_df]"

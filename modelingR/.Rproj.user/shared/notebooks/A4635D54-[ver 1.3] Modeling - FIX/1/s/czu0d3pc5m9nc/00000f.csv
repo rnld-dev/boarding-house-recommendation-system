@@ -1,0 +1,2 @@
+"0","# Add cluster assignments to the original dataframe"
+"0","df$cluster <- pam_fit2$clustering"

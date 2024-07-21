@@ -1,0 +1,4 @@
+"0","df_gower <- daisy(x = df[, selected_col],"
+"0","                       metric = ""gower"")"
+"0",""
+"0","# Hasil df_gower adalah nilai dissimilarity antar objek data"

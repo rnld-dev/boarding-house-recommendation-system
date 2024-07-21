@@ -1,0 +1,4 @@
+"0","# Boxplot"
+"0","ggplot(df, aes(x = 1, y = Harga)) +"
+"0","  geom_boxplot(fill = ""blue"", alpha = 0.5) +"
+"0","  labs(x = """", y = ""Harga"", title = ""Boxplot Harga Sewa Kos"")"

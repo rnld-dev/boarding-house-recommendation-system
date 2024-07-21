@@ -1,0 +1,4 @@
+"0","example <- as.matrix(df_gower)"
+"0",""
+"0","df[, selected_col][which(example == min(example[example != min(example)]),"
+"0","        arr.ind = TRUE)[1, ], ]"

@@ -1,0 +1,114 @@
+---
+title: "production"
+author: "Sahat Renaldi. S"
+date: "2024-06-30"
+output: html_document
+---
+
+```{r}
+df <- readRDS("production.rds")
+head(df)
+```
+
+```{r}
+# Total Kos
+total_kos <- nrow(df)
+total_kos
+
+```
+
+```{r}
+# Persentase kos ekslusif
+ekslusif <- df[df["cluster"]=="2",]
+kos_ekslusif = round(((nrow(ekslusif)/total_kos)*100))
+kos_ekslusif
+```
+
+```{r}
+# Median Harga Sewa Bulanan
+median_harga <- median(df$Harga)
+median_harga
+```
+
+```{r}
+colnames(df)
+```
+
+```{r}
+library(leaflet)
+library(dplyr)
+```
+
+```{r}
+# Tambahkan kolom warna berdasarkan cluster
+df_withcolor <- df %>% mutate(color = ifelse(cluster == 1, "#d03f2c", "#004af9"))
+head(df_withcolor)
+```
+
+```{r}
+saveRDS(df_withcolor, "production_withcolor.rds")
+```
+
+```{r}
+# Lokasi UPN
+upn_lat <- -7.3327844081176625
+upn_lng <- 112.7886245733404
+
+# Buat peta interaktif
+leaflet(df) %>%
+  addTiles() %>%
+  setView(lng = upn_lng, lat = upn_lat, zoom = 13.23) %>%  # Atur lokasi dan zoom awal
+  addCircleMarkers(
+    ~Longitude, ~Latitude,
+    color = ~color,
+    fillColor = ~color,
+    popup = ~paste(
+      Nama, "<br><br>",
+      "<b>Jenis Kos:</b>", Jenis, "<br>",
+      "<b>Lokasi:</b>", Lokasi, "<br>",
+      "<b>Harga:</b>", Harga, "<br>",
+      "<b>Luas Kamar:</b>", Luas.Kamar, "<br>",
+      "<b>Jarak ke UPN:</b>", format(round(UPN, 2), nsmall = 2), "km<br>",
+      "<b>Listrik:</b>", Listrik, "<br>",
+      "<b>Kamar Mandi Dalam:</b>", K.Mandi.Dalam, "<br>",
+      "<b>AC:</b>", AC, "<br>",
+      "<a href='", Link, "' target='_blank' style='color:blue; text-decoration:underline;'>Klik untuk melihat</a>"
+    ),
+    radius = 6,           # Tetapkan radius tetap untuk semua lingkaran
+    fillOpacity = 0.3,    # Transparansi isi lingkaran
+    opacity = 1,          # Transparansi batas lingkaran
+    stroke = TRUE,        # Aktifkan batas lingkaran
+    weight = 1,           # Ketebalan batas lingkaran
+    label = ~Nama,
+    labelOptions = labelOptions(
+      noHide = FALSE,
+      direction = 'auto'
+    )
+  ) %>%
+  addCircleMarkers(
+    lng = upn_lng, lat = upn_lat,
+    color = "black",          # Warna batas lingkaran UPN
+    fillColor = "#e5dec9",      # Warna isi lingkaran UPN
+    radius = 8,            # Ukuran radius lingkaran UPN
+    fillOpacity = 2,        # Transparansi isi lingkaran UPN
+    opacity = 0.8,            # Transparansi batas lingkaran UPN
+    stroke = TRUE,          # Aktifkan batas lingkaran UPN
+    label = "UPN",
+    popup = "Universitas Pembangunan Nasional",
+    labelOptions = labelOptions(
+      noHide = TRUE,
+      direction = 'auto'
+    )
+  ) %>%
+  addLegend(
+    "bottomright",
+    colors = c("#d03f2c", "#004af9"),
+    labels = c("Kos Standar", "Kos Eksklusif"),
+    title = "Klaster"
+  )
+
+```
+
+
+
+

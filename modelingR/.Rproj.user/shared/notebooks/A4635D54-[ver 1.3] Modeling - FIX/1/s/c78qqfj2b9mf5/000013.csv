@@ -1,0 +1,4 @@
+"0","# Boxplot"
+"0","ggplot(df, aes(x = 1, y = Luas.Kamar)) +"
+"0","  geom_boxplot(fill = ""blue"", alpha = 0.5) +"
+"0","  labs(x = """", y = ""Luas Kamar"", title = ""Boxplot Luas Kamar"")"

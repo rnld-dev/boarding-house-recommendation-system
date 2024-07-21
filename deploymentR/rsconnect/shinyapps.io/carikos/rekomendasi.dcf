@@ -1,0 +1,12 @@
+name: rekomendasi
+title: rekomendasi
+username: carikos
+account: carikos
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 12255809
+bundleId: 8882161
+url: https://carikos.shinyapps.io/rekomendasi/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

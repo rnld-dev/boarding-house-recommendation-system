@@ -1,0 +1,815 @@
+---
+title: "Analisis Klaster K-Prototype & Partitioning Around Medoids (PAM) dengan Gower Distance"
+author: "Sahat Renaldi. S"
+date: "10-06-2024"
+output:
+  html_document:
+    number_sections: true
+    df_print: paged
+    highlight: tango
+    theme: cosmo
+    toc: yes
+    toc_depth: 4
+    toc_float:
+      collapsed: true
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+editor_options: 
+  chunk_output_type: inline
+---
+
+<style>
+
+body {
+text-align: justify}
+
+</style>
+
+```{r setup, include=FALSE}
+# clear-up the environment
+rm(list = ls())
+
+# chunk options
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  comment = "#>"
+)
+
+options(scipen = 999)
+```
+
+<style>
+
+body {
+text-align: justify}
+
+</style>
+
+```{r}
+## Clustering 
+library(cluster)
+library(factoextra)
+library(FactoMineR)
+
+
+## Clustering Visualization
+library(Rtsne)
+library(rgl)
+library(plotly)
+library(ggplot2)
+
+# Knit
+library(knitr)
+library(rgl)
+
+# Data Preprocessing
+library(dplyr)
+library(tibble)
+```
+
+
+# Data Preparation
+
+```{r message=FALSE}
+library(dplyr)
+
+df <- read.csv("data_hasil_ekstrak_maps.csv",
+               stringsAsFactors = T, header=TRUE, sep=",", row.names=NULL)
+
+glimpse(df)
+```
+
+# Exploratory Data Analysis
+
+## Eksplorasi Data Numerik
+
+```{r}
+summary(df$Harga)
+```
+
+```{r}
+summary(df$Luas.Kamar)
+```
+
+```{r}
+summary(df$UPN)
+```
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+
+# Create individual boxplots
+boxplot_harga <- ggplot(df, aes(y = Harga)) +
+  geom_boxplot(fill = "blue", color = "black") +
+  labs(title = "Distribusi Harga", y = "Harga (Rp)", x = "") +
+  theme(axis.text.x = element_blank())
+
+boxplot_luas <- ggplot(df, aes(y = Luas.Kamar)) +
+  geom_boxplot(fill = "green", color = "black") +
+  labs(title = "Distribusi Luas", y = "Luas (meter persegi)", x = "") +
+  theme(axis.text.x = element_blank())
+
+boxplot_jarak <- ggplot(df, aes(y = UPN)) +
+  geom_boxplot(fill = "red", color = "black") +
+  labs(title = "Distribusi Jarak", y = "Jarak (km)", x = "") +
+  theme(axis.text.x = element_blank())
+
+# Gabungkan
+grid.arrange(boxplot_harga, boxplot_luas, boxplot_jarak, ncol = 3, widths = c(1.2, 1.2, 1.2))
+```
+
+### Harga Sewa
+
+```{r}
+# Plot density
+ggplot(df, aes(x = Harga)) +
+  geom_density(fill = "#85C1E9", alpha = 0.5) +
+  labs(x = "Harga", y = "Density", title = "Density Plot Harga Sewa Kos")
+```
+
+```{r}
+# Boxplot
+ggplot(df, aes(x = 1, y = Harga)) +
+  geom_boxplot(fill = "blue", alpha = 0.5) +
+  labs(x = "", y = "Harga", title = "Boxplot Harga Sewa Kos")
+```
+
+```{r}
+# Hitung Quartile Pertama dan Ketiga
+Q1 <- quantile(df$Harga, 0.25)
+Q3 <- quantile(df$Harga, 0.75)
+
+# Hitung Interquartile Range (IQR)
+IQR <- Q3 - Q1
+
+# Hitung Batas Bawah dan Atas untuk Outlier
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+
+# Identifikasi Outlier
+outliers <- df$Harga[df$Harga < lower_bound | df$Harga > upper_bound]
+
+# Tampilkan hasil
+print(outliers)
+```
+
+```{r}
+# Filter dataframe untuk menghapus outlier pada Harga Sewa
+df <- df[!(df$Harga < lower_bound | df$Harga > upper_bound), ]
+
+tail(df)
+```
+
+```{r}
+nrow(df)
+```
+
+### Luas Kamar
+
+```{r}
+# Plot density
+ggplot(df, aes(x = Luas.Kamar)) +
+  geom_density(fill = "#85C1E9", alpha = 0.5) +
+  labs(x = "Luas Kamar", y = "Density", title = "Density Plot Luas Kamar")
+```
+
+```{r}
+# Boxplot
+ggplot(df, aes(x = 1, y = Luas.Kamar)) +
+  geom_boxplot(fill = "blue", alpha = 0.5) +
+  labs(x = "", y = "Luas Kamar", title = "Boxplot Luas Kamar")
+```
+
+```{r}
+# Hitung Quartile Pertama dan Ketiga
+Q1 <- quantile(df$Luas.Kamar, 0.25, na.rm = TRUE)
+Q3 <- quantile(df$Luas.Kamar, 0.75, na.rm = TRUE)
+
+# Hitung Interquartile Range (IQR)
+IQR <- Q3 - Q1
+
+# Hitung Batas Bawah dan Atas untuk Outlier
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+
+# Identifikasi Outlier
+outliers <- df$Luas.Kamar[df$Luas.Kamar < lower_bound | df$Luas.Kamar > upper_bound]
+
+# Tampilkan hasil
+print(outliers)
+
+```
+
+```{r}
+df[df["Luas.Kamar"]>50]
+```
+
+
+**Dalam proses ini hanya akan dihapus data indekos dengan luas kamar 81 (karena setelah dilakukan pengecekan ini adalah anomali)**
+
+```{r, out.width = "80%", echo = FALSE, fig.align = "center"}
+knitr::include_graphics("img/Anomali Data Luas Kamar.png")
+```
+
+```{r}
+# Filter dataframe untuk menghapus data luas kamar > 80
+df <- df[!(df$Luas.Kamar>80), ]
+```
+
+```{r}
+nrow(df)
+```
+
+```{r}
+# Plot density
+ggplot(df, aes(x = Luas.Kamar)) +
+  geom_density(fill = "#85C1E9", alpha = 0.5) +
+  labs(x = "Luas Kamar", y = "Density", title = "Density Plot Luas Kamar")
+```
+
+### Jarak ke UPN
+
+```{r}
+# Plot density
+ggplot(df, aes(x = UPN)) +
+  geom_density(fill = "#85C1E9", alpha = 0.5) +
+  labs(x = "Jarak ke Kampus UPN", y = "Density", title = "Density Plot Jarak ke Kampus")
+```
+
+```{r}
+# Boxplot
+ggplot(df, aes(x = 1, y = UPN)) +
+  geom_boxplot(fill = "blue", alpha = 0.5) +
+  labs(x = "", y = "Jarak ke Kampus UPN", title = "Boxplot Jarak ke Kampus UPN")
+```
+
+```{r}
+# Hitung Quartile Pertama dan Ketiga
+Q1 <- quantile(df$UPN, 0.25)
+Q3 <- quantile(df$UPN, 0.75)
+
+# Hitung Interquartile Range (IQR)
+IQR <- Q3 - Q1
+
+# Hitung Batas Bawah dan Atas untuk Outlier
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+
+# Identifikasi Outlier
+outliers <- df$UPN[df$UPN < lower_bound | df$UPN > upper_bound]
+
+# Tampilkan hasil
+print(outliers)
+```
+
+```{r}
+# Filter dataframe untuk menghapus outlier pada data Jarak ke Kampus UPN
+df <- df[!(df$UPN < lower_bound | df$UPN > upper_bound), ]
+
+tail(df)
+```
+
+```{r}
+nrow(df)
+```
+
+### Korelasi
+
+```{r}
+library(GGally)
+
+# korelasi sebelum PCA
+ggcorr(df[, c("Harga", "Luas.Kamar", "UPN")], label = T, hjust =1)
+```
+
+## Eksplorasi Data Kategorik
+
+### Persentase Ketersediaan Fasilitas 
+
+```{r}
+# Menghitung jumlah total properti
+total_properti <- nrow(df)
+
+# Menghitung jumlah properti yang menyediakan setiap fasilitas
+jumlah_k_mandi_dalam <- sum(df$'K.Mandi.Dalam' == 'Yes')
+jumlah_ac <- sum(df$AC == 'Yes')
+jumlah_wifi <- sum(df$WiFi == 'Yes')
+jumlah_kasur <- sum(df$Kasur == 'Yes')
+jumlah_akses_24_jam <- sum(df$'Akses.24.Jam' == 'Yes')
+jumlah_listrik_termasuk <- sum(df$Listrik == 'Termasuk listrik')
+
+# Menghitung persentase ketersediaan fasilitas
+persentase_k_mandi_dalam <- (jumlah_k_mandi_dalam / total_properti) * 100
+persentase_ac <- (jumlah_ac / total_properti) * 100
+persentase_wifi <- (jumlah_wifi / total_properti) * 100
+persentase_kasur <- (jumlah_kasur / total_properti) * 100
+persentase_akses_24_jam <- (jumlah_akses_24_jam / total_properti) * 100
+persentase_listrik_termasuk <- (jumlah_listrik_termasuk / total_properti) * 100
+
+# Membuat dataframe untuk tabel ketersediaan fasilitas
+tabel_ketersediaan <- data.frame(
+  Fasilitas = c('K. Mandi Dalam', 'AC', 'WiFi', 'Kasur', 'Akses 24 Jam', 'Informasi Termasuk Listrik'),
+  'Persentase Ketersediaan (%)' = c(
+    persentase_k_mandi_dalam,
+    persentase_ac,
+    persentase_wifi,
+    persentase_kasur,
+    persentase_akses_24_jam,
+    persentase_listrik_termasuk
+  )
+)
+
+# Tampilkan dataframe
+print(tabel_ketersediaan)
+
+```
+
+📌 Kolom terkait fasilitas WiFI, 'Kasur', dan Akses 24 Jam nantinya tidak akan digunakan dalam pemodelan karena mayoritas kos (>70% kos) menyediakan fasilitas tersebut. Hal ini dilakukan untuk menghindari bias dalam proses klasterisasi.
+
+```{r}
+# Menghapus level yang tidak digunakan
+df$Lokasi <- droplevels(df$Lokasi)
+```
+
+```{r}
+table(df$Lokasi)
+```
+
+```{r}
+# Sebelum filter lokasi
+nrow(df)
+```
+
+```{r}
+# Daftar lokasi Surabaya Timur
+sby_timur <- c('Gubeng', 'Gunung Anyar', 'Sukolilo', 'Tambaksari', 'Mulyorejo', 'Rungkut', 'Tenggilis Mejoyo')
+
+# Filter lokasi sby_timur
+df <- df[df$Lokasi %in% sby_timur, ]
+```
+
+```{r}
+# Setelah filter lokasi
+nrow(df)
+```
+
+**473 ROW DATA DIGUNAKAN UNTUK PEMODELAN**
+
+```{r}
+df$Lokasi <- droplevels(df$Lokasi)
+table(df$Lokasi)
+```
+
+```{r}
+# Reset index
+rownames(df) <- seq(nrow(df))
+```
+
+
+# Pemodelan
+
+```{r}
+# Standarisasi kolom numerik (Harga, Luas.Kamar, dan UPN)
+df <- df %>%
+  mutate(
+    Harga.Scale = as.numeric(scale(Harga)),
+    Luas.Kamar.Scale = as.numeric(scale(Luas.Kamar)),
+    UPN.Scale = as.numeric(scale(UPN))
+  )
+
+tail(df)
+```
+
+```{r}
+table(df$Lokasi)
+```
+
+Bisa diperhatikan bahwa terdapat banyak kategori lokasi dan sebarannya tidak merata. Oleh karena itu, kolom Lokasi (kategori) tidak akan digunakan dalam pemodelan (karena sudah diwakilkan juga dengan informais maps nantinya ketika deployment)
+
+> TERSISA 7 VARIABEL (3 NUMERIK + 4 KATEGORIK) UNTUK NANTINYA DILAKUKAN PEMODELAN KLASTER
+
+```{r}
+selected_col <- c("Harga.Scale", "Luas.Kamar.Scale", "UPN.Scale", 
+                "Jenis", "Listrik", "K.Mandi.Dalam", "AC")
+
+df[, selected_col]
+```
+
+📝 Dalam pemodelan klaster, variabel data yang akan digunakan adalah Lokasi, Harga, Jenis Kos, Listrik, Luas Kamar, K. Mandi Dalam, AC, WiFi, Kasur, Akses 24 Jam, Jarak Ke UPN. Untuk latitude dan longitude dalam tidak akan dimasukkan dalam pemodelan, data tsb akan digunakan dalam visualisasi geospasial saja nanti. 
+
+Model klasterisasi yang akan dibangun disini adalah:
+-   K-Prototype
+-   PAM-Gower
+-   K-Prototype with MCA(Listrik, K.Mandi.Dalam, AC, WiFi, Kasur, Akses.24Jam)
+-   PAM-Gower with MCA(Listrik, K.Mandi.Dalam, AC, WiFi, Kasur, Akses.24Jam)
+-   Perbandingan Nilai Elbow, Silhouette, Dunn Index
+-   Pemilihan Metode Klasterisasi Terbaik & Interpretasi
+
+## K-Prototype 
+
+### Penentuan Bnayak Cluster (Kelompok)
+
+#### Elbow Method
+
+```{r}
+library(clustMixType)
+```
+
+
+```{r}
+set.seed(7567)
+
+# Fungsi untuk menghitung WSS
+wss <- function(k) {
+  kproto_model <- kproto(df[, selected_col], k)
+  sum(kproto_model$tot.withinss)
+}
+
+# Menghitung WSS untuk berbagai nilai k
+k.values <- 1:9
+wss.values <- sapply(k.values, wss)
+
+# Membuat grafik elbow
+elbow1 <- plot(k.values, wss.values, type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares",
+     main="Elbow method for k-prototypes")
+```
+
+#### Silhouette Method
+
+```{r}
+set.seed(7567)
+
+# Fungsi untuk pemodelan k-prototypes
+kproto_wrapper <- function(k, df, selected_col) {
+  kproto_model <- kproto(df[, selected_col], k)
+  return(kproto_model)
+}
+
+# Fungsi untuk menghitung nilai Siluet rata-rata menggunakan jarak default k-prototypes
+avg_sil <- function(k, df) {
+  kproto_model <- kproto(df, k)
+  clusters <- kproto_model$cluster
+  silhouette_score <- silhouette(clusters, dist(kproto_model$dists))
+  mean(silhouette_score[, 3])
+}
+
+# Menghitung nilai Siluet untuk berbagai nilai k
+k.values <- 2:9
+sil_values <- sapply(k.values, function(k) avg_sil(k, df[, selected_col]))
+
+# Membuat grafik untuk nilai Siluet
+sil1 <- plot(k.values, sil_values, type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Average silhouette width",
+     main="Silhouette method for k-prototypes")
+
+```
+
+```{r}
+sil_values
+```
+
+### Klasterisasi K-Prototype dengan K = 2
+
+**Kelompok 1**
+
+```{r}
+# Pilih k = 2
+set.seed(7567)
+k <- 2
+
+# Melakukan clustering untuk k = 2
+kproto_model <- kproto(df[, selected_col], k)
+clusters <- kproto_model$cluster
+
+# Menampilkan summary dari data klaster 1
+summary(df[clusters == 1, c("Harga", "Luas.Kamar", "UPN",
+                  "Jenis", "Listrik", "K.Mandi.Dalam", "AC")])
+```
+
+**Kelompok 2**
+
+```{r}
+# Menampilkan summary dari data klaster 2
+summary(df[clusters == 2, c("Harga", "Luas.Kamar", "UPN",
+                  "Jenis", "Listrik", "K.Mandi.Dalam", "AC")])
+```
+
+## PAM-Gower
+
+Secara garis besar akan ada 3 langkah yang nantinya akan dilakukan, yaitu:
+
+-   Perhitungan jarak antar observasi data
+-   Penentuan jumlah cluster
+-   Clustering
+
+### Gower Distance
+
+Metode Gower Distance nantinya akan melakukan perbandingan pada setiap observasi data yang ada terhadap data-data yang lainnya, dengan cara melakukan perhitungan skala antara kedua observasi yang dibandingkan dengan rentan 0 sampai 1. Jika hasil dari perbandingannya mendekati 0 maka bisa dibilang kedua data tersebut identik atau jarak antara kedua observasi tersebut berdekatan, begitu juga sebaliknya, jika rentan perbandingannya mendekati 1 bisa dibilang kedua data tersebut tidak identik atau jarak antara kedua observasi tersebut berjauhan.
+
+Di R, metode Gower Distance tersimpan pada `library(cluster)` dan fungsi yang bisa digunakan adalah `daisy()`. Pada fungsi tersebut nantinya akan ada 2 parameter yang bisa diisi, yaitu:
+
+-   x: Data frame yang ingin digunakan
+-   metric: Metode apa yang ingin digunakan, karena kita akan menggunakan metode Gower Distance, kita bisa isi dengan “gower”.
+
+```{r}
+glimpse(df[, selected_col])
+```
+
+```{r}
+df_gower <- daisy(x = df[, selected_col],
+                       metric = "gower")
+
+# Hasil df_gower adalah nilai dissimilarity antar objek data
+```
+
+Sebagai pembuktian apakah metode Gower Distance memang bisa menempatkan data-data kita berdasarkan kemiripannya, kita bisa mencetak pasangan yang paling mirip dan berbeda dalam data kita dengan menggunakan fungsi di bawah ini.
+
+**Contoh pasangan data yang paling identik**
+
+```{r}
+example <- as.matrix(df_gower)
+
+df[, selected_col][which(example == min(example[example != min(example)]),
+        arr.ind = TRUE)[1, ], ]
+```
+
+```{r}
+baris1 <- 117
+baris2 <- 92
+jarak <- example[baris1, baris2]
+print(jarak)
+```
+
+
+Dalam kode diatas, `min(example[example != min(example)])` bagian ini mencari nilai terkecil kedua dalam matriks example. Nilai terkecil pertama dalam matriks adalah nol (yang menunjukkan jarak suatu baris dengan dirinya sendiri). Untuk mencari pasangan data yang paling mirip, kita harus menemukan nilai terkecil selain nol.
+
+**Contoh pasangan data yang paling tidak identik**
+
+```{r}
+df[, selected_col][which(example == max(example[example != max(example)]),
+        arr.ind = TRUE)[1, ], ]
+```
+
+```{r}
+baris1 <- 442
+baris2 <- 4
+jarak <- example[baris1, baris2]
+print(jarak)
+```
+
+### Penentuan Banyak Cluster (Kelompok)
+
+Tujuan dari melakukan clustering adalah menempatkan setiap observasi data yang ada ke beberapa kelompok yang sesuai dengan karakteristiknya atau bedasarkan kedekatan jarak antar setiap observasi. Pada langkah pertama kita sudah memiliki informasi jarak antar setiap observasi, kita akan memanfaatkan informasi tersebut untuk menentukan berapakah kelompok yang paling optimal. 
+
+Terdapat 3 metode yang dapat digunakan untuk menentukan jumlah kelompok yang paling optimum yaitu, Elbow Method, Silhouette Method & Gap Statistic Method. Ketiga metode tersebut dapat kita gunakan dengan menggunakan fungsi `fviz_nbclust()` dari `library(factoextra)`. Pada fungsi tersebut nantinya akan ada 3 parameter yang bisa diisi, yaitu:
+
+-   x = Data frame yang ingin digunakan
+-   FUNcluster = Metode pengelompokan apa yang ingin digunakan, karena kita akan menggunakan metode PAM, kita bisa isi dengan pam.
+-   method = Metode apa yang ingin digunakan untuk mengestimasi jumlah kelompok yang paling optimal.
+
+#### Elbow Method
+
+Dengan metode pertama ini kita akan memvariasikan jumlah kelompok dengan menghitung Within Sum of Square (WSS). WSS adalah akan menghasilkan jumlah kuadrat jarak antara setiap observasi terhadap titik Medoids untuk setiap kemungkinan jumlah kelompok, fungsi fviz_nbclust() secara otomatis akan menghitung WCSS sampai dengan 10 kelompok (jumlah kelompok yang ingin dicoba hitung bisa diatur secara manual sesuai dengan kebutuhan).
+
+Dengan bertambahnya jumlah kelompok, nilai WSS akan mulai berkurang (nilai WSS terbesar ketika K = 1). Ketika kita menganalisis grafik kita dapat melihat bahwa grafik akan berubah dengan cepat pada suatu titik dan dengan demikian menciptakan bentuk siku. Dari titik ini, grafik mulai bergerak hampir sejajar dengan sumbu X. Nilai K yang sesuai dengan titik ini adalah nilai K optimal atau jumlah kelompok yang optimal.
+
+
+```{r}
+set.seed(7567)
+
+fviz_nbclust(x = as.matrix(df_gower),
+             FUNcluster = pam,
+             method = "wss",
+             k.max=10) +
+  labs(subtitle = "Elbow method for PAM with Gower Distance")
+```
+
+Dari plot di atas dapat dilihat bahwa 2, 3, 4 adalah jumlah kelompok yang optimum. Karena setelah k=2, penambahan jumlah kelompok tidak mengakibatkan penurunan jumlah nilai WSS yang signifikan.
+
+#### Silhouette Method
+
+Metode kedua yang akan dicoba untuk menentukan jumlah kelompok yang optimal adalah Silhouette Method. Metode ini akan menghitung seberapa mirip sebuah observasi dengan kelompoknya sendiri jika dibandingkan dengan nilai kelompok lainnya. Hasil dari perhitungannya akan memiliki rentan koefisien dari -1 sampai 1. Jika nanti hasilnya makin mendekati 1 maka observasi tersebut cocok dengan kelompoknya dan kurang cocok dengan kelompok tetangga, begitu juga sebaliknya, jika hasilnya makin mendekati -1 maka observasi tersebut tidak cocok dengan kelompoknya akan tetapi lebih cocok dengan kelompok tetangganya.
+
+Berbeda dengan elbow method, makin bertambahnya jumlah kelompok, nilai hasil perhitungan metode silhouette method tidak pasti akan berkurang. Penentuan nilai kelompok yang optimal akan ditentukan berdasarkan nilai koefisien paling tinggi pada saat membagi keseluruhan observasi ke berapa banyak kelompok.
+
+```{r}
+set.seed(7567)
+
+res <- fviz_nbclust(x = as.matrix(df_gower),
+             FUNcluster = pam,
+             k.max = 9,
+             method = "silhouette") +
+  labs(subtitle = "Silhouette method for PAM with Gower Distance")
+
+print(res)
+
+```
+
+
+```{r}
+res$data
+```
+
+### Klasterisasi PAM-Gower dengan K = 2
+
+```{r}
+set.seed(7567)
+pam_fit2 <- pam(x = df_gower, 
+               k = 2)
+```
+
+```{r}
+pam_fit2$medoids
+```
+
+```{r}
+df[pam_fit2$medoids, c("Harga", "Luas.Kamar", "UPN",
+                  "Jenis", "Listrik", "K.Mandi.Dalam", "AC")]
+```
+
+```{r}
+pam2_results <- df[,c("Harga", "Luas.Kamar", "UPN",
+                  "Jenis", "Listrik", "K.Mandi.Dalam", "AC")]  %>%
+  mutate(cluster = pam_fit2$clustering) %>%
+  group_by(cluster) %>%
+  do(the_summary = summary(.))
+```
+
+
+```{r}
+pam2_results$the_summary[[1]]
+```
+
+```{r}
+pam2_results$the_summary[[2]]
+```
+
+# Aplikasikan Model ke Data
+
+```{r}
+# Add cluster assignments to the original dataframe
+df$cluster <- pam_fit2$clustering
+```
+
+```{r}
+names(df)
+```
+
+```{r}
+head(df$cluster)
+```
+
+```{r}
+# Menentukan keterangan kategori cluster
+df$cluster <- factor(df$cluster, levels = c(1, 2), labels = c("Klaster 1", "Klaster 2"))
+
+```
+
+
+```{r}
+# Visualisasi Lokasi terhadap cluster
+ggplot(df, aes(x = Lokasi, fill = cluster)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Distribusi Klaster Indekos Berdasarkan Lokasi", x = "Lokasi", y = "Count", fill = "Cluster") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+# Hitung frekuensi setiap klaster
+cluster_counts <- table(df$cluster)
+
+# Konversi ke dataframe
+cluster_df <- as.data.frame(cluster_counts)
+colnames(cluster_df) <- c("Cluster", "Count")
+
+# Tambahkan kolom untuk persentase
+cluster_df$Percentage <- round(cluster_df$Count / sum(cluster_df$Count) * 100, 1)
+
+# Buat pie chart
+ggplot(cluster_df, aes(x = "", y = Count, fill = Cluster)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar(theta = "y") +
+  labs(title = "Presentase Klaster", x = "", y = "") +
+  theme_void() +
+  geom_text(aes(label = paste0(Percentage, "%")), position = position_stack(vjust = 0.5))
+```
+
+
+
+```{r}
+table(df$cluster)
+```
+
+# Save Data 
+
+```{r}
+production_df <- c("Link", "Nama", "Maps", "Latitude", "Longitude",
+                   "Jenis", "Lokasi", "Harga", "Luas.Kamar", "UPN", 
+                   "Listrik", "K.Mandi.Dalam", "AC", "WiFi", "Kasur", "Akses.24.Jam", "cluster")
+
+production <- df[, production_df]
+```
+
+```{r}
+# Reset index
+rownames(production) <- seq(nrow(production))
+```
+
+```{r}
+tail(production)
+```
+
+# Prediksi Cluster Data Baru
+
+```{r}
+# Load libraries
+library(cluster)
+library(dplyr)
+
+# Scaling parameters (pastikan production adalah data pelatihan)
+scaling_params <- list(center = c(Harga = mean(df$Harga), Luas.Kamar = mean(df$Luas.Kamar), UPN = mean(df$UPN)), 
+                       scale = c(Harga = sd(df$Harga), Luas.Kamar = sd(df$Luas.Kamar), UPN = sd(df$UPN)))
+
+# Scale function
+scale_data <- function(data, scaling_params) {
+  data <- data %>%
+    mutate(Harga.Scale = (Harga - scaling_params$center["Harga"]) / scaling_params$scale["Harga"],
+           Luas.Kamar.Scale = (Luas.Kamar - scaling_params$center["Luas.Kamar"]) /  scaling_params$scale["Luas.Kamar"],
+           UPN.Scale = (UPN - scaling_params$center["UPN"]) / scaling_params$scale["UPN"],
+           Jenis = as.factor(Jenis),
+           Listrik = as.factor(Listrik),
+           K.Mandi.Dalam = as.factor(K.Mandi.Dalam),
+           AC = as.factor(AC))
+  return(data)
+}
+
+# Data baru
+new_data <- data.frame(Harga = 1500000, 
+                       Luas.Kamar = 20, 
+                       UPN = 1.2, 
+                       Jenis = "Campur", 
+                       Listrik = "Termasuk listrik", 
+                       K.Mandi.Dalam = "Yes", 
+                       AC = "No")
+
+# Scale the new data using the provided scaling parameters
+new_data_scaled <- scale_data(new_data, scaling_params)
+
+# Gabungkan data pelatihan dengan data baru
+df_combined <- bind_rows(df, new_data_scaled) 
+
+# Kolom yang digunakan dalam model
+selected_col <- c("Harga.Scale", "Luas.Kamar.Scale", "UPN.Scale", "Jenis", "Listrik", "K.Mandi.Dalam", "AC")
+
+# Gower distance untuk data baru
+df_gower_combined <- daisy(df_combined[, selected_col], metric = "gower")
+
+# Convert Gower distance object to matrix
+df_gower_combined_matrix <- as.matrix(df_gower_combined)
+
+# Jarak antara data baru dan data pelatihan
+gower_distance_new <- df_gower_combined_matrix[nrow(df_combined), 1:nrow(df)]
+
+# Menentukan klaster data baru
+cluster_new_data <- pam_fit2$clustering[which.min(gower_distance_new)]
+
+# Filter data pelatihan yang berada dalam klaster yang sama dengan data baru
+same_cluster_indices <- which(pam_fit2$clustering == cluster_new_data)
+gower_distance_same_cluster <- gower_distance_new[same_cluster_indices]
+
+# Menampilkan 20 kos terdekat dalam klaster yang sama
+nearest_kos_indices <- same_cluster_indices[order(gower_distance_same_cluster)[1:20]]
+nearest_kos <- df[nearest_kos_indices, ]
+
+# Membuat dataframe hasil dengan jarak Gower
+results <- nearest_kos %>%
+  mutate(Gower_Distance = gower_distance_same_cluster[order(gower_distance_same_cluster)[1:20]]) %>%
+  select(Harga, Luas.Kamar, UPN, Jenis, Listrik, K.Mandi.Dalam, AC, cluster, Gower_Distance)
+
+# Hasil klasterisasi
+print(paste("Klaster data baru:", cluster_new_data))
+print("20 kos terdekat dalam klaster yang sama beserta jarak Gower:")
+print(results)
+
+```
+
+# Export Data to RDS
+
+```{r}
+# Simpan data dan model ke dalam file RDS
+saveRDS(production, "production.rds")
+saveRDS(pam_fit2, "pam_fit2.rds")
+```
+
+
+
+

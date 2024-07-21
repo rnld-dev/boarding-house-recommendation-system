@@ -1,0 +1,2 @@
+"0","# Menghapus level yang tidak digunakan"
+"0","df$Lokasi <- droplevels(df$Lokasi)"

@@ -1,0 +1,19 @@
+"0","glimpse(df[, selected_col])"
+"1","Rows: 473"
+"1",""
+"1","
+"
+"1","Columns: 7"
+"1",""
+"1","
+"
+"1","$ Harga.Scale      [3m[38;5;246m<dbl>[39m[23m -0.66858258, 0.08117207, -0.58316749, 2.45381338, 1.50475686, 2.07419077, 0.22353055, -0.…
+$ Luas.Kamar.Scale [3m[38;5;246m<dbl>[39m[23m -1.6546756, -1.6546756, -1.3903763, 2.3098138, 1.2526166, 2.3098138, -0.5974785, -0.59747…
+$ UPN.Scale        [3m[38;5;246m<dbl>[39m[23m -1.1282592, -1.1282592, -1.1282592, -1.1951117, -1.1951117, -1.1951117, -1.2639366, -1.58…
+$ Jenis            [3m[38;5;246m<fct>[39m[23m Putri, Putri, Putri, Putri, Putri, Putri, Putra, Putra, Campur, Putri, Putra, Putra, Putr…
+$ Listrik          [3m[38;5;246m<fct>[39m[23m Tidak termasuk listrik, Tidak termasuk listrik, Tidak termasuk listrik, Tidak termasuk li…
+$ K.Mandi.Dalam    [3m[38;5;246m<fct>[39m[23m No, No, No, Yes, Yes, Yes, Yes, No, Yes, Yes, Yes, Yes, Yes, Yes, No, No, No, No, No, Yes…
+$ AC               [3m[38;5;246m<fct>[39m[23m No, Yes, No, Yes, Yes, Yes, Yes, Yes, Yes, Yes, Yes, Yes, Yes, Yes, Yes, Yes, Yes, Yes, N…"
+"1",""
+"1","
+"

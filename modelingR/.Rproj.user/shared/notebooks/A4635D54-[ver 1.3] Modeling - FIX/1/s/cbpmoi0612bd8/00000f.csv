@@ -1,0 +1,7 @@
+"0","set.seed(7567)"
+"0",""
+"0","fviz_nbclust(x = as.matrix(df_gower),"
+"0","             FUNcluster = pam,"
+"0","             method = ""wss"","
+"0","             k.max=10) +"
+"0","  labs(subtitle = ""Elbow method for PAM with Gower Distance"")"

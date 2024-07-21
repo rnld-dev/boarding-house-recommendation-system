@@ -1,0 +1,5 @@
+"0","pam2_results <- df[,c(""Harga"", ""Luas.Kamar"", ""UPN"","
+"0","                  ""Jenis"", ""Listrik"", ""K.Mandi.Dalam"", ""AC"")]  %>%"
+"0","  mutate(cluster = pam_fit2$clustering) %>%"
+"0","  group_by(cluster) %>%"
+"0","  do(the_summary = summary(.))"

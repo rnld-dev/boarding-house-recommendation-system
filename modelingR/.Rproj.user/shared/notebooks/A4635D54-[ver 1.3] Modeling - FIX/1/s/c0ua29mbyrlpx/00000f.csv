@@ -1,0 +1,4 @@
+"0","# Plot density"
+"0","ggplot(df, aes(x = UPN)) +"
+"0","  geom_density(fill = ""#85C1E9"", alpha = 0.5) +"
+"0","  labs(x = ""Jarak ke Kampus UPN"", y = ""Density"", title = ""Density Plot Jarak ke Kampus"")"

@@ -1,0 +1,2 @@
+"0","# Filter dataframe untuk menghapus data luas kamar > 80"
+"0","df <- df[!(df$Luas.Kamar>80), ]"

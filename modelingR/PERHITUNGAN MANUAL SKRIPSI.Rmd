@@ -1,0 +1,207 @@
+---
+title: "Perhitungan Manual Metode Skripsi"
+author: "Sahat Renaldi. S"
+date: "10-06-2024"
+output:
+  html_document:
+    number_sections: true
+    df_print: paged
+    highlight: tango
+    theme: cosmo
+    toc: yes
+    toc_depth: 4
+    toc_float:
+      collapsed: true
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+editor_options: 
+  chunk_output_type: inline
+---
+
+<style>
+
+body {
+text-align: justify}
+
+</style>
+
+```{r setup, include=FALSE}
+# clear-up the environment
+rm(list = ls())
+
+# chunk options
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  comment = "#>"
+)
+
+options(scipen = 999)
+```
+
+<style>
+
+body {
+text-align: justify}
+
+</style>
+
+# PERHITUNGAN JARAK EUCLIDEAN
+
+```{r}
+# Dataset yang diberikan
+data <- data.frame(
+  Harga = c(2.2, 1.0, 0.5, -0.1, 1.45),
+  Luas_Kamar = c(1.6, 1.2, -0.6, -1.0, 1.4),
+  UPN = c(0.5, 2.2, 1.8, 1.0, 1.3)
+)
+
+# Data poin baru
+data_baru <- data.frame(
+  Harga = 1.2,
+  Luas_Kamar = -0.2,
+  UPN = 1.2
+)
+
+# Fungsi untuk menghitung jarak Euclidean
+euclidean_distance <- function(x, y) {
+  sqrt(sum((x - y)^2))
+}
+
+# Menghitung jarak Euclidean antara data poin baru dan setiap data poin dalam dataset
+jarak <- apply(data, 1, function(row) euclidean_distance(row, unlist(data_baru)))
+
+# Menampilkan jarak
+jarak
+
+```
+
+# PERHITUNGAN JARAK SIMPLE MATCHING
+
+```{r}
+# Data awal
+data_awal <- data.frame(
+  Nama_Kos = c("Indekos 1", "Indekos 2", "Indekos 3", "Indekos 4", "Indekos 5"),
+  Jenis = c("Putri", "Putri", "Putra", "Campur", "Campur"),
+  Listrik = c("Tidak termasuk listrik", "Termasuk Listrik", "Tidak termasuk listrik", "Tidak termasuk listrik", "Tidak termasuk Listrik"),
+  K_Mandi_Dalam = c("Yes", "No", "No", "No", "Yes"),
+  AC = c("Yes", "Yes", "No", "No", "Yes")
+)
+
+# Data baru
+data_baru <- data.frame(
+  Jenis = "Campur",
+  Listrik = "Termasuk listrik",
+  K_Mandi_Dalam = "Yes",
+  AC = "Yes"
+)
+
+# Fungsi untuk menghitung jarak Simple Matching
+simple_matching_distance <- function(row1, row2) {
+  sum(row1 != row2) / length(row1)
+}
+
+# Menghitung jarak Simple Matching untuk setiap data dalam data awal
+distances <- apply(data_awal[, -1], 1, function(row) simple_matching_distance(row, data_baru))
+
+# Menambahkan jarak ke data awal
+data_awal$Distance <- distances
+
+# Menampilkan hasil
+print(data_awal)
+```
+
+
+# PERHITUNGAN JARAK GOWER
+
+```{r}
+# Load library gower
+library(gower)
+
+# Data indekos
+indekos <- data.frame(
+  Harga = c(2.2, 1.0, 0.5, -0.1, 1.45),
+  Luas_Kamar = c(1.6, 1.2, -0.6, -1.0, 1.4),
+  UPN = c(0.5, 2.2, 1.8, 1.0, 1.3),
+  Jenis = factor(c("Putri", "Putri", "Putra", "Campur", "Campur")),
+  Listrik = factor(c("Tidak termasuk listrik", "Termasuk Listrik", "Tidak termasuk listrik", "Tidak termasuk listrik", "Termasuk Listrik")),
+  K_Mandi_Dalam = factor(c("Yes", "No", "No", "No", "Yes")),
+  AC = factor(c("Yes", "Yes", "No", "No", "Yes"))
+)
+
+# Data baru
+data_baru <- data.frame(
+  Harga = 1.2,
+  Luas_Kamar = -0.2,
+  UPN = 1,
+  Jenis = factor("Campur", levels = levels(indekos$Jenis)),
+  Listrik = factor("Termasuk Listrik", levels = levels(indekos$Listrik)),
+  K_Mandi_Dalam = factor("Yes", levels = levels(indekos$K_Mandi_Dalam)),
+  AC = factor("Yes", levels = levels(indekos$AC))
+)
+
+# Hitung jarak Gower
+gower_dist <- gower_dist(indekos, data_baru)
+
+# Tampilkan hasil
+print(gower_dist)
+
+```
+
+# PERHITUNGAN K-PROTOTYPE PADA DATA CAMPURAN
+
+```{r}
+library(clustMixType)
+
+set.seed(1000)
+data_kproto <- data.frame(
+  Nama_Kos = c("Kos 1", "Kos 2", "Kos 3", "Kos 4", "Kos 5", "Kos 6", "Kos 7", "Kos 8", "Kos 9"),
+  Harga = c(2.2, 1, 0.5, -0.1, 1.45, 2, -0.4, 0.4, -0.2),
+  Luas_Kamar = c(1.6, 1.2, -0.6, -1, 1.4, 2, 1.2, -0.3, 0.2),
+  UPN = c(0.5, 2.2, 1.8, 1, 1.3, -0.3, 2, 1, 1),
+  Jenis = as.factor(c("Putri", "Putri", "Putra", "Campur", "Campur", "Putra", "Putri", "Putra", "Putra")),
+  Listrik = as.factor(c("Tidak termasuk listrik", "Termasuk Listrik", "Tidak termasuk listrik", "Tidak termasuk listrik", "Termasuk Listrik", "Tidak termasuk listrik", "Termasuk Listrik", "Termasuk listrik", "Tidak termasuk listrik")),
+  K_Mandi_Dalam = as.factor(c("Yes", "No", "No", "No", "Yes", "Yes", "Yes", "No", "No")),
+  AC = as.factor(c("Yes", "Yes", "No", "No", "Yes", "Yes", "Yes", "No", "No"))
+)
+# Gabungkan centroid numerik dan kategorikal
+inisialisasi <- data_kproto[data_kproto$Nama_Kos %in% c("Kos 3", "Kos 5"), -1]
+# Jalankan kproto dengan inisialisasi pusat klaster langsung dari data
+hasil_kproto <- kproto(data_kproto[, -1], k = 2, lambda = 1, start = inisialisasi)
+# Tampilkan hasil klaster
+print(hasil_kproto)
+```
+
+```{r}
+set.seed(1000)
+data_kproto2 <- data.frame(
+  Nama_Kos = c("Kos 1", "Kos 2", "Kos 3", "Kos 4", "Kos 5", "Kos 6", "Kos 7", "Kos 8", "Kos 9"),
+  Harga = c(2.2, 1, 0.5, -0.1, 1.45, 2, -0.4, 0.4, -0.2),
+  Luas_Kamar = c(1.6, 1.2, -0.6, -1, 1.4, 2, 1.2, -0.3, 0.2),
+  UPN = c(0.5, 2.2, 1.8, 1, 1.3, -0.3, 2, 1, 1),
+  Jenis = as.factor(c("Putri", "Putri", "Putra", "Campur", "Campur", "Putra", "Putri", "Putra", "Putra")),
+  Listrik = as.factor(c("Tidak termasuk listrik", "Termasuk Listrik", "Tidak termasuk listrik", "Tidak termasuk listrik", "Termasuk Listrik", "Tidak termasuk listrik", "Termasuk Listrik", "Termasuk listrik", "Tidak termasuk listrik")),
+  K_Mandi_Dalam = as.factor(c("Yes", "No", "No", "No", "Yes", "Yes", "Yes", "No", "No")),
+  AC = as.factor(c("Yes", "Yes", "No", "No", "Yes", "Yes", "Yes", "No", "No"))
+)
+# Gabungkan centroid numerik dan kategorikal
+inisialisasi2 <- data_kproto[data_kproto$Nama_Kos %in% c("Kos 3", "Kos 5"), -1]
+# Jalankan kproto dengan inisialisasi pusat klaster langsung dari data
+hasil_kproto2 <- kproto(data_kproto2[, -1], k = 2, start = inisialisasi2)
+# Tampilkan hasil klaster
+print(hasil_kproto2)
+```
+
+# PERHITUNGAN K-PROTOTYPE PADA DATA CAMPURAN
+
+```{r}
+
+```
+ 
+
+
+
+

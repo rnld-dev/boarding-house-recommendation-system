@@ -1,0 +1,4 @@
+"0","# Plot density"
+"0","ggplot(df, aes(x = Harga)) +"
+"0","  geom_density(fill = ""#85C1E9"", alpha = 0.5) +"
+"0","  labs(x = ""Harga"", y = ""Density"", title = ""Density Plot Harga Sewa Kos"")"

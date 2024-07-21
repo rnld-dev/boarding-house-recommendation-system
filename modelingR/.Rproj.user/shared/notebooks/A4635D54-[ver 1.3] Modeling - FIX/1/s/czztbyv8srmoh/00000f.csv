@@ -1,0 +1,8 @@
+"0","baris1 <- 442"
+"0","baris2 <- 4"
+"0","jarak <- example[baris1, baris2]"
+"0","print(jarak)"
+"1","[1]"
+"1"," 0.8862671"
+"1","
+"
